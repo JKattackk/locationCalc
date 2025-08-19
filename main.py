@@ -2,6 +2,7 @@ import math
 import numpy as np
 import pyperclip
 from global_hotkeys import *
+import os
 rad = 150
 
 def overlap_center(x1, y1, x2, y2, r=150):
@@ -73,18 +74,28 @@ def circle_radius(center, point1, point2, r):
 def elevation_range(rad, r_circle):
     return math.sqrt((rad ** 2) - (r_circle ** 2))
 
-print("waiting for first point:\n")
-inputBuff = input()
-point1 = [float(item) for item in inputBuff.split()]
+while True:
+    os.system('cls')
 
-print("waiting for second point:\n")
-inputBuff = input()
-point2 = [float(item) for item in inputBuff.split()]
+    print("waiting for first point:")
+    input()
+    inputBuff = pyperclip.paste().split()[6:9:1]
+    print(inputBuff)
+    point1 = [float(item) for item in inputBuff] 
 
-centerPoint = overlap_center(point1[0], point1[2], point2[0], point2[2], rad)
-print(centerPoint)
+    print("waiting for second point:\n")
+    input()
+    inputBuff = pyperclip.paste().split()[6:9:1]
+    print(inputBuff)
+    point2 = [float(item) for item in inputBuff]
 
-circleRad = circle_radius(centerPoint, point1, point2, rad)
-elevation = elevation_range(rad, circleRad)
+    centerPoint = overlap_center(point1[0], point1[2], point2[0], point2[2], rad)
+    print(centerPoint)
 
-print("elevation: ", elevation)
+    circleRad = circle_radius(centerPoint, point1, point2, rad)
+    elevation = elevation_range(rad, circleRad)
+
+    print("elevation: ", elevation)
+    print("enter to reset")
+    input()
+
