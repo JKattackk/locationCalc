@@ -6,8 +6,8 @@ import os
 import matplotlib.pyplot as plt
 
 def_rad = 200
-
-import numpy as np
+plotResolution = .2 #points per meters squared
+plotExtension = 5 #factor to increase radius when generating plot points
 
 EPS = 1e-9
 
@@ -172,12 +172,36 @@ def common_sphere_intersection(
 def plotPoints(plotPoints, center):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
-    ax.scatter(xs = plotPoints[:, 0], ys = plotPoints[:, 2], zs = plotPoints[:, 1], c='r', marker='o')
+    ax.scatter(xs = plotPoints['x'], ys = plotPoints['z'], zs = plotPoints['y'], c='r', marker='o')
     ax.set_xlabel('X')
     ax.set_ylabel('Z')
     ax.set_zlabel('Y')
     ax.set_autoscale_on(True)
     plt.show()
+
+def scatterPoints(spheres, center, radius):
+    spheres = [(float(x), float(y), float(z), float(r)) for (x, y, z, r) in spheres]
+    
+    generationRange = radius*plotExtension
+    samples = (2*int(generationRange*plotResolution))**3
+    testPoints = np.array([center[0] - generationRange + 2*generationRange*np.random.rand(samples), 
+                  center[1] - generationRange + 2*generationRange*np.random.rand(samples), 
+                  center[2] - generationRange + 2*generationRange*np.random.rand(samples)]).T
+    validxVals = []
+    validyVals = []
+    validzVals = []
+    for point in testPoints:
+        valid = True
+        for sphere in spheres:
+            dist = math.sqrt(((point[0]-sphere[0])**2) + ((point[1]-sphere[1])**2) + ((point[2]-sphere[2])**2))
+            if dist > sphere[3]:
+                valid = False
+                break
+        if valid:
+            validxVals.append(point[0])
+            validyVals.append(point[1])
+            validzVals.append(point[2])
+    return {'x': validxVals, 'y': validyVals, 'z': validzVals}
 
 while True:
     os.system('cls')
@@ -190,9 +214,9 @@ while True:
             break
         elif userInput == "plot":
             if result is not None:
-                plotPoints(result['points'], result['center'])
+                plotPoints(scatterPoints(points, center = result['center'], radius = result['inner_radius']), result['center'])
             else:
-                print("no points present")
+                print("Please add more points")
         else:
             try:
                 rad = int(userInput)
@@ -211,7 +235,7 @@ while True:
 
             if len(points) > 1:
                 result = common_sphere_intersection(
-                    points, samples = 20000, refine_iters = 1200, return_points = True)
+                    points, samples = 20000, refine_iters = 1200, return_points = False)
                 print("possible locations:")
                 print("center: ", result["center"], "radius: ", result['inner_radius'])
 
