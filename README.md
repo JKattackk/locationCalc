@@ -58,3 +58,6 @@ Clean up terminal view or add GUI (I dont like making gui's)
 Actually go through and comment the code
 
 Further adjust plot and maybe find a way to open it in a dedicated window
+
+add option for plotting during two spheres
+

@@ -229,7 +229,7 @@ while True:
             break
         elif userInput == "p":
             if scatterSamples is not None:
-                plot_scatter3d(scatterSamples, )
+                plot_scatter3d(scatterSamples, maxPlotPoints)
             else:
                 print("no points exist for plotting")
         elif userInput == "u":
