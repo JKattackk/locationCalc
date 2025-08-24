@@ -1,0 +1,80 @@
+import math
+import numpy as np
+import pyperclip
+from global_hotkeys import *
+import os
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+
+samples = 100000
+d1 = 20
+d2 = 5
+center = [5, 5, 5]
+vector = [1, 1, 0]
+radius = 20
+
+def plot_scatter3d(points, max_points=200_000):
+    points = np.array(points)
+    n = len(points)
+    
+    if n > max_points:
+        idx = np.random.choice(n, size=max_points, replace=False)
+        points = points[idx]
+    
+    fig = go.Figure(data=[go.Scatter3d(
+        x=points[:, 0],
+        y=points[:, 2],
+        z=points[:, 1],
+        mode='markers',
+        marker=dict(size=2, opacity=0.5)
+    )])
+    
+    fig.update_layout(
+        scene=dict(
+            xaxis_title='X',
+            yaxis_title='Z',
+            zaxis_title='Y'
+        ),
+        title=f"3D Scatter ({len(points):,} points shown)"
+    )
+    fig.show()
+
+#to generate a random scatter within a cube
+#this cube will contain intersectionRadius (radius of the circle where two spheres intersect) and the overlap distance (distance which two spehres overlap along the vector from one sphere to the other)
+    
+#d2 is the distance along vector v
+vector = np.array(vector)
+#let v be one coordinate axis and generate random points along this axis between -.5d2 and .5d2
+v1 = [scale*vector for scale in np.random.uniform(-.5*d2, .5*d2, samples)]
+
+#determine vector2 orthogonal to vector
+if np.allclose(vector, [0,0,1]):
+    not_parallel = np.array([1,0,0])
+else:
+    not_parallel = np.array([0,0,1])
+vector2 = np.cross(vector, not_parallel)
+vector2 = [i / np.linalg.norm(vector2) for i in vector2]
+
+#determine vector3 orthogonal to both vector and vector1
+#these 3 vectors form the basis of a new coordinate system
+
+vector3 = np.cross(vector, vector2)
+
+theta = np.random.uniform(0, 2 * np.pi, samples)
+r = radius * np.sqrt(np.random.uniform(0, 1, samples))
+v2 = (r * np.cos(theta))
+v2 = [np.multiply(a, vector2) for a in  v2]
+
+v3 = (r * np.sin(theta))
+v3 = [np.multiply(b, vector3) for b in  v3]
+
+circPoints = [v1[i] + v2[i] + v3[i] + center for i in range(len(v1))]
+
+
+#generate 
+
+#generate cube of size d1 x d1 x d2 centered at 0, 0
+
+
+plot_scatter3d(circPoints)
+plot_scatter3d(v1)

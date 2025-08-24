@@ -31,9 +31,9 @@ display?
 - For first two spheres
     - radius of each circle
     - formula for plane of each circle?
-        -  could help to quickly tell user which direction needs to be narrowed down
+       could help to quickly tell user which direction needs to be narrowed down
     - seperate engine for plotting maybe? (on request)
-        - drawing two circles instead of scattering
+         drawing two circles instead of scattering
 
 - Sebsequent spheres
     - center of scattered points
@@ -48,7 +48,7 @@ Sometimes fails to find points within intersection area when area becomes small.
 considering changing approach instead of increasing the number of samples.
  - does this only occur when the radius of instersection and overlap distance are very different?
     - use radius and overlap distance to create cube bounding point generation instead of generating a sphere encompassing the larger of the two
-        - could greatly cut down on the total area the points have to cover and therefore increase the likelihood of generated points being within intersection
+         could greatly cut down on the total area the points have to cover and therefore increase the likelihood of generated points being within intersection
 
  - generate a lower ammount of points and retry with larger ammounts if too few points are found?
     - still pretty brute force, should be a better solution
@@ -58,3 +58,6 @@ Clean up terminal view or add GUI (I dont like making gui's)
 Actually go through and comment the code
 
 Further adjust plot and maybe find a way to open it in a dedicated window
+
+add option for plotting during two spheres
+
