@@ -267,7 +267,10 @@ while True:
             if scatterSamples is not None:
                 plot_scatter3d(scatterSamples, maxPlotPoints)
             else:
-                scatterSamples = cyl_scatter(result[0], result[1], result[2], result[3], samples)
+                if len(sphereList) > 1:
+                    scatterSamples = cyl_scatter(result[0], result[1], result[2], result[3], samples)
+                elif len(sphereList) == 1:
+                    scatterSamples = sphere_scatter(sphereList[0][0:3], sphereList[0][3], samples)
                 scatterSamples = valid_points(sphereList, scatterSamples)
                 if len(scatterSamples) > 0:
                     plot_scatter3d(scatterSamples, maxPlotPoints)
@@ -307,8 +310,10 @@ while True:
                     else:
                         newSphere = pastedNumbers[0:2]
                         newSphere.extend([rad1, rad2])
-                elif len(inputNumbers) >3  or len(inputNumbers) == 5:
+                elif len(inputNumbers) > 3  or len(inputNumbers) == 5:
                     newSphere = inputNumbers
+                    if len(newSphere) < 5:
+                        newSphere.append(0)
                 if newSphere != None:
                     os.system('cls')
                     [sphereList, removedSpheres] = update_list(sphereList, newSphere, removedSpheres)
