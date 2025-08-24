@@ -135,7 +135,7 @@ def valid_points(spheres, scatterSamples):
     for point in scatterSamples:
         valid = True
         for sphere in spheres:
-            if vector_magnitude(vector(sphere, point)) > sphere[3]:
+            if vector_magnitude(vector(sphere, point)) > sphere[3] or vector_magnitude(vector(sphere, point)) < sphere[4] :
                 valid = False
         if valid:
             validPoints.append(point)
@@ -279,14 +279,16 @@ while True:
                 removedSpheres.append(sphereList.pop())
             except:
                 print("no sphere to remove")
+                ############################
         else:
             inputNumbers = get_numbers(userInput)
-
             if len(inputNumbers) > 5:
                 print("invalid input")
             else:
+                ## attempting to make new sphere
                 newSphere = []
                 if len(inputNumbers) == 0:
+                    #uses default radius and gets coordinates from clipboard
                     [rad1, rad2] = [def_rad, 0]
                     pastedNumbers = get_numbers(pyperclip.paste())
                     if len(pastedNumbers) < 3:
@@ -295,6 +297,7 @@ while True:
                         newSphere = pastedNumbers[0:2]
                         newSphere.extend([rad1, rad2])
                 elif len(inputNumbers) == 1:
+                    #uses input as outer radius, gets coordinates from clipboard
                     [rad1, rad2] = [inputNumbers[0], 0]
                     pastedNumbers = get_numbers(pyperclip.paste())
                     if len(pastedNumbers) < 3:
@@ -303,6 +306,7 @@ while True:
                         newSphere = pastedNumbers[0:2]
                         newSphere.extend([rad1, rad2])
                 elif len(inputNumbers) == 2:
+                    #uses inputs as inner and outer radius, gets coordinates from clipboard
                     [rad1, rad2] = [inputNumbers[0], inputNumbers[1]]
                     pastedNumbers = get_numbers(pyperclip.paste())
                     if len(pastedNumbers) < 3:
@@ -310,10 +314,17 @@ while True:
                     else:
                         newSphere = pastedNumbers[0:2]
                         newSphere.extend([rad1, rad2])
-                elif len(inputNumbers) > 3  or len(inputNumbers) == 5:
+                elif len(inputNumbers) == 3:
+                    #uses inputs as coordinates, uses default radius
+                    [rad1, rad2] = [def_rad, 0]
+                    newSphere = inputNumbers[0:2]
+                    newSphere = newSphere.extend[rad1, rad2]
+                elif len(inputNumbers) > 3:
+                    #uses inputs as coordinates and radius. if only four numbers entered assumes inner radius of zero.
                     newSphere = inputNumbers
                     if len(newSphere) < 5:
                         newSphere.append(0)
+                
                 if newSphere != None:
                     os.system('cls')
                     [sphereList, removedSpheres] = update_list(sphereList, newSphere, removedSpheres)
