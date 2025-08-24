@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 def_rad = 200
-samples = 500000
+samples = 200000
 maxPlotPoints = 20000
 #factor for adjusting random distribution in sphere scattering
 #k>3 will favour outer edge of sphere
@@ -36,8 +36,8 @@ def plot_scatter3d(points, max_points=200_000):
     
     fig = go.Figure(data=[go.Scatter3d(
         x=points[:, 0],
-        y=points[:, 1],
-        z=points[:, 2],
+        y=points[:, 2],
+        z=points[:, 1],
         mode='markers',
         marker=dict(size=2, opacity=0.5)
     )])
@@ -45,8 +45,8 @@ def plot_scatter3d(points, max_points=200_000):
     fig.update_layout(
         scene=dict(
             xaxis_title='X',
-            yaxis_title='Y',
-            zaxis_title='Z'
+            yaxis_title='Z',
+            zaxis_title='Y'
         ),
         title=f"3D Scatter ({len(points):,} points shown)"
     )
@@ -103,16 +103,13 @@ def sphere_intersection(spheres):
     v_u = [x / distance for x in v_u]
     distCenter = (distance**2 + bestOverlap[0][0][3]**2 - (bestOverlap[0][1][3]**2)) / (2*distance)
     vCenter = [x * distCenter for x in v_u]
-    centerPoint = [bestOverlap[0][0][0] + vCenter[0], bestOverlap[0][0][1] + vCenter[0], bestOverlap[0][0][2] + vCenter[0]]
+    centerPoint = [bestOverlap[0][0][0] + vCenter[0], bestOverlap[0][0][1] + vCenter[1], bestOverlap[0][0][2] + vCenter[2]]
 
     intersectionRadius = math.sqrt(bestOverlap[0][0][3]**2 - distCenter**2)
 
     if len(spheres) > 2:
-        if bestOverlap[1] <= intersectionRadius:
-            scatterSamples = sphere_scatter(centerPoint, intersectionRadius, samples)
-        else:
-            print("primary overlap distance greater than intersection radius")
-            scatterSamples = sphere_scatter(centerPoint, bestOverlap[1], samples)
+        
+        scatterSamples = sphere_scatter(centerPoint, bestOverlap[1], intersectionRadius, v_u, samples)
         scatterSamples = valid_points(spheres, scatterSamples)
         if len(scatterSamples) > 0:
             scatterCenter = scatter_center(scatterSamples)
@@ -131,7 +128,7 @@ def sphere_intersection(spheres):
         print("intersection overlap: ", round(bestOverlap[1]))
         roundedVector = [f"{num:.2f}" for num in v_u]
         print("direction vector: ", roundedVector)
-    return(scatterSamples)
+    return [[centerPoint, bestOverlap[1], intersectionRadius, v_u], scatterSamples]
     
 def valid_points(spheres, scatterSamples):
     validPoints = []
@@ -214,6 +211,36 @@ def find_scatter_bounds(scatterPoints, center):
     #return {"x":xbounds.astype(int).tolist(), "y": ybounds.astype(int).tolist(), "z": zbounds.astype(int).tolist()}
     return {"x": (xbounds + center[0]).astype(int).tolist(), "y": (ybounds + center[1]).astype(int).tolist(), "z": (zbounds + center[2]).astype(int).tolist()}
 
+def cyl_scatter(center, d1, radius, vector, samples):
+    
+    #d1 is the distance along vector v
+    vector = np.array(vector)
+    #let v be one coordinate axis and generate random points along this axis between -.5d1 and .5d1
+    v1 = [scale*vector for scale in np.random.uniform(-.5*d1, .5*d1, samples)]
+
+    #determine vector2 orthogonal to vector
+    if np.allclose(vector, [0,0,1]):
+        not_parallel = np.array([1,0,0])
+    else:
+        not_parallel = np.array([0,0,1])
+    vector2 = np.cross(vector, not_parallel)
+    vector2 = [i / np.linalg.norm(vector2) for i in vector2]
+
+    #determine vector3 orthogonal to both vector and vector1
+    #these 3 vectors form the basis of a new coordinate system
+
+    vector3 = np.cross(vector, vector2)
+
+    theta = np.random.uniform(0, 2 * np.pi, samples)
+    r = radius * np.sqrt(np.random.uniform(0, 1, samples))
+    v2 = (r * np.cos(theta))
+    v2 = [np.multiply(a, vector2) for a in  v2]
+
+    v3 = (r * np.sin(theta))
+    v3 = [np.multiply(b, vector3) for b in  v3]
+
+    circPoints = [v1[i] + v2[i] + v3[i] + center for i in range(len(v1))]
+    return circPoints
 
 
 while True:
@@ -231,7 +258,10 @@ while True:
             if scatterSamples is not None:
                 plot_scatter3d(scatterSamples, maxPlotPoints)
             else:
-                print("no points exist for plotting")
+                scatterSamples = cyl_scatter(result[0], result[1], result[2], result[3], samples)
+                scatterSamples = valid_points(sphereList, scatterSamples)
+                if len(scatterSamples) > 0:
+                    plot_scatter3d(scatterSamples, maxPlotPoints)
         elif userInput == "u":
             try:
                 removedSpheres.append(sphereList.pop())
@@ -263,7 +293,7 @@ while True:
                 print(sphere)
             print("\n")
             if len(sphereList) >=2:
-                scatterSamples = sphere_intersection(sphereList)
+                [result, scatterSamples] = sphere_intersection(sphereList)
 
 
         
