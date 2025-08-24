@@ -72,3 +72,16 @@ Further adjust plot and maybe find a way to open it in a dedicated window
 ~~add option for plotting during two spheres~~
 implemented.
 
+
+___________________________________________________________________________________________________________________________________________________________________________________
+
+Possible future features:
+
+ - enable use of inner and outer radius for detection spheres
+    - enables useful tools to quickly narrow search area
+        - location is not within radius (r2 >= r1)
+        - location is between r1 and r2
+    - can cause multiple disconnected search areas (?)
+        - some way to recognize seperate areas and tell the user multiple centers / ranges instead of giving one in the center of multiple areas
+        - maybe changing plot method?
+    
