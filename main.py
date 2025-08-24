@@ -50,6 +50,7 @@ def plot_scatter3d(points, max_points=200_000):
         ),
         title=f"3D Scatter ({len(points):,} points shown)"
     )
+    fig.update_scenes(aspectmode="data")
     fig.show()
 
 def plot_volume(points, bins=50):
