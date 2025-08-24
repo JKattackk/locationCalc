@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 
 def_rad = 200
 samples = 200000
-maxPlotPoints = 20000
+maxPlotPoints = 10000
 
 #factor for adjusting random distribution in sphere scattering
 #k>3 will favour outer edge of sphere
@@ -250,7 +250,7 @@ while True:
     scatterSamples = None
 
     while True:
-        print("enter a point from clip board or enter 'reset' to reset")
+        print("waiting for input: ")
         userInput = input()
         if userInput == "r":
             break
@@ -268,18 +268,36 @@ while True:
             except:
                 print("no sphere to remove")
         else:
-            try:
-                rad = int(userInput)
-            except:
-                rad = def_rad
+            inputNumbers = []
+            userInput = userInput.split()
+            for string in userInput:
+                try:
+                    inputNumbers.append(float(string))
+                except:
+                    print(string, " not a valid number, ignoring")
+            if len(inputNumbers) == 0:
+                rad1 = def_rad
+                inputBuff = pyperclip.paste().split()[6:9:1]
+                newSphere = [float(item) for item in inputBuff]
+                newSphere.append(rad1)
+            elif len(inputNumbers) == 1:
+                rad1 = inputNumbers[0]
+                inputBuff = pyperclip.paste().split()[6:9:1]
+                newSphere = [float(item) for item in inputBuff]
+                newSphere.append(rad1)
+            elif len(inputNumbers) == 2:
+                [rad1, rad2] = [inputNumbers[0], inputNumbers[1]]
+                inputBuff = pyperclip.paste().split()[6:9:1]
+                newSphere = [float(item) for item in inputBuff]
+                newSphere.extend([rad1, rad2])
+            elif len(inputNumbers) == 4 or len(inputNumbers) == 5:
+                newSphere = inputNumbers
+            else:
+                print("not valid input")
 
             ############
                 
             os.system('cls')
-            inputBuff = pyperclip.paste().split()[6:9:1]
-            newSphere = [float(item) for item in inputBuff]
-            newSphere.append(rad)
-
             [sphereList, removedSpheres] = update_list(sphereList, newSphere, removedSpheres)
             
             if len(removedSpheres) >= 1:
