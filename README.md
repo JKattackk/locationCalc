@@ -5,7 +5,15 @@ Problem:
 A tool makes a noise to alert you when you are within x units of an object.
 Using two or more points along the outer radius of this detection range calculate the most likely position(s) of the object in 3D space.
 
+Usage:
+Currently somewhat integrated with Minecraft.  
+Use F3+C to copy coordinates to clipboard.
+press enter in console to add a sphere with the default radius
+enter a radius to add a sphere with a custom radius
 
+enter 'u' to remove the last active sphere
+enter 'p' to show a plot of the area
+enter 'r' to reset the search
 
 ___________________________________________________________________________________________________________________________________________________________________________________
 
@@ -44,14 +52,16 @@ ________________________________________________________________________________
 
 Issues / to change
 
-Sometimes fails to find points within intersection area when area becomes small.
-considering changing approach instead of increasing the number of samples.
- - does this only occur when the radius of instersection and overlap distance are very different?
-    - use radius and overlap distance to create cube bounding point generation instead of generating a sphere encompassing the larger of the two
-         could greatly cut down on the total area the points have to cover and therefore increase the likelihood of generated points being within intersection
+~~Sometimes fails to find points within intersection area when area becomes small.~~
+~~considering changing approach instead of increasing the number of samples.~~
+ - ~~does this only occur when the radius of instersection and overlap distance are very different?~~
+    - ~~use radius and overlap distance to create cube bounding point generation instead of generating a sphere encompassing the larger of the two~~
+         ~~could greatly cut down on the total area the points have to cover and therefore increase the likelihood of generated points being within intersection~~
 
- - generate a lower ammount of points and retry with larger ammounts if too few points are found?
-    - still pretty brute force, should be a better solution
+ - ~~generate a lower ammount of points and retry with larger ammounts if too few points are found?~~
+    - ~~still pretty brute force, should be a better solution~~
+fixed error with calculating center of intersection that was likely causing the failure to find points.
+also implemented cylindrical scattering to fit scattered points more closely to the initial overlap used
 
 Clean up terminal view or add GUI (I dont like making gui's)
 
@@ -59,5 +69,6 @@ Actually go through and comment the code
 
 Further adjust plot and maybe find a way to open it in a dedicated window
 
-add option for plotting during two spheres
+~~add option for plotting during two spheres~~
+implemented.
 
