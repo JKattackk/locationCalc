@@ -1,5 +1,5 @@
 # locationCalc
- Calculating location of object using points along outer radius of known detection range
+ Calculating location of object using overlap of detection spheres
 
 Problem:
 A tool makes a noise to alert you when you are within x units of an object.
