@@ -3,19 +3,19 @@ import numpy as np
 import pyperclip
 from global_hotkeys import *
 import os
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
 def_rad = 200
 samples = 200000
 maxPlotPoints = 20000
+
 #factor for adjusting random distribution in sphere scattering
 #k>3 will favour outer edge of sphere
 k = 3
 
 #def plot_shader(plotPoints):
 
-def plot_points(plotPoints):
+""" def plot_points(plotPoints):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
     for point in plotPoints[:maxPoints]:
@@ -24,7 +24,7 @@ def plot_points(plotPoints):
     ax.set_ylabel('Z')
     ax.set_zlabel('Y')
     ax.set_autoscale_on(True)
-    plt.show()
+    plt.show() """
 
 def plot_scatter3d(points, max_points=200_000):
     points = np.array(points)
@@ -295,7 +295,7 @@ while True:
                 [result, scatterSamples] = sphere_intersection(sphereList)
 
 
-        
+
         
 
 
