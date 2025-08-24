@@ -242,6 +242,15 @@ def cyl_scatter(center, d1, radius, vector, samples):
     circPoints = [v1[i] + v2[i] + v3[i] + center for i in range(len(v1))]
     return circPoints
 
+def get_numbers(inputString):
+    inputNumbers = []
+    inputString = inputString.split(" ")
+    for string in inputString:
+        try:
+            inputNumbers.append(float(string))
+        except:
+            print(string, " not a valid number, ignoring")
+    return inputNumbers
 
 while True:
     os.system('cls')
@@ -268,50 +277,57 @@ while True:
             except:
                 print("no sphere to remove")
         else:
-            inputNumbers = []
-            userInput = userInput.split()
-            for string in userInput:
-                try:
-                    inputNumbers.append(float(string))
-                except:
-                    print(string, " not a valid number, ignoring")
-            if len(inputNumbers) == 0:
-                rad1 = def_rad
-                inputBuff = pyperclip.paste().split()[6:9:1]
-                newSphere = [float(item) for item in inputBuff]
-                newSphere.append(rad1)
-            elif len(inputNumbers) == 1:
-                rad1 = inputNumbers[0]
-                inputBuff = pyperclip.paste().split()[6:9:1]
-                newSphere = [float(item) for item in inputBuff]
-                newSphere.append(rad1)
-            elif len(inputNumbers) == 2:
-                [rad1, rad2] = [inputNumbers[0], inputNumbers[1]]
-                inputBuff = pyperclip.paste().split()[6:9:1]
-                newSphere = [float(item) for item in inputBuff]
-                newSphere.extend([rad1, rad2])
-            elif len(inputNumbers) == 4 or len(inputNumbers) == 5:
-                newSphere = inputNumbers
+            inputNumbers = get_numbers(userInput)
+
+            if len(inputNumbers) > 5:
+                print("invalid input")
             else:
-                print("not valid input")
+                newSphere = []
+                if len(inputNumbers) == 0:
+                    [rad1, rad2] = [def_rad, 0]
+                    pastedNumbers = get_numbers(pyperclip.paste())
+                    if len(pastedNumbers) < 3:
+                        print("no valid coordinates in clipboard")
+                    else:
+                        newSphere = pastedNumbers[0:2]
+                        newSphere.extend([rad1, rad2])
+                elif len(inputNumbers) == 1:
+                    [rad1, rad2] = [inputNumbers[0], 0]
+                    pastedNumbers = get_numbers(pyperclip.paste())
+                    if len(pastedNumbers) < 3:
+                        print("no valid coordinates in clipboard")
+                    else:
+                        newSphere = pastedNumbers[0:2]
+                        newSphere.extend([rad1, rad2])
+                elif len(inputNumbers) == 2:
+                    [rad1, rad2] = [inputNumbers[0], inputNumbers[1]]
+                    pastedNumbers = get_numbers(pyperclip.paste())
+                    if len(pastedNumbers) < 3:
+                        print("no valid coordinates in clipboard")
+                    else:
+                        newSphere = pastedNumbers[0:2]
+                        newSphere.extend([rad1, rad2])
+                elif len(inputNumbers) >3  or len(inputNumbers) == 5:
+                    newSphere = inputNumbers
+                if newSphere != None:
+                    os.system('cls')
+                    [sphereList, removedSpheres] = update_list(sphereList, newSphere, removedSpheres)
+                    
+                    if len(removedSpheres) >= 1:
+                        print("inactive spheres")
+                        for sphere in removedSpheres:
+                            print(sphere)
+                        print("\n")
 
-            ############
-                
-            os.system('cls')
-            [sphereList, removedSpheres] = update_list(sphereList, newSphere, removedSpheres)
+                    print("active spheres:")
+                    for sphere in sphereList:
+                        print(sphere)
+                    print("\n")
+                    if len(sphereList) >=2:
+                        [result, scatterSamples] = sphere_intersection(sphereList)
+
+
             
-            if len(removedSpheres) >= 1:
-                print("inactive spheres")
-                for sphere in removedSpheres:
-                    print(sphere)
-                print("\n")
-
-            print("active spheres:")
-            for sphere in sphereList:
-                print(sphere)
-            print("\n")
-            if len(sphereList) >=2:
-                [result, scatterSamples] = sphere_intersection(sphereList)
 
 
 
