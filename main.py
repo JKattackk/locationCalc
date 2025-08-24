@@ -108,8 +108,7 @@ def sphere_intersection(spheres):
     intersectionRadius = math.sqrt(bestOverlap[0][0][3]**2 - distCenter**2)
 
     if len(spheres) > 2:
-        
-        scatterSamples = sphere_scatter(centerPoint, bestOverlap[1], intersectionRadius, v_u, samples)
+        scatterSamples = cyl_scatter(centerPoint, bestOverlap[1], intersectionRadius, v_u, samples)
         scatterSamples = valid_points(spheres, scatterSamples)
         if len(scatterSamples) > 0:
             scatterCenter = scatter_center(scatterSamples)
