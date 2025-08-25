@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import pyperclip
-from global_hotkeys import *
 import os
 import plotly.graph_objects as go
 
@@ -95,6 +94,13 @@ def vector_magnitude(v):
     """Calculates and returns the magnitude of a vector v"""
     mag = math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
     return mag
+
+def sphere_volume(sphere):
+    """Calculates and returns the volume of a sphere or hollow sphere
+    sphere = [x, y, z, rad1, rad2]"""
+    [rad1, rad2] = [sphere[3], sphere[4]]
+    vol = (4/3)*math.pi*(rad1**3 - rad2**3)
+    return vol
 
 ### SCATTERING TOOLS ###
 def sphere_scatter(center, r1, samples):
@@ -191,15 +197,7 @@ def sphere_intersection(spheres):#needs doc
     scatterSamples = None
     #calculate vector between center of spheres
     #consider reworking this to only check new pairs against old best when sphere added
-    bestOverlap = []
-    spherePairs = [(s1, s2) for s1 in spheres for s2 in spheres if s1 != s2]
-    for spherePair in spherePairs:
-        overlap = spherePair[0][3] + spherePair[1][3] - vector_magnitude(vector(spherePair[0], spherePair[1]))
-        try:
-            if bestOverlap[1] > overlap:
-                bestOverlap = [spherePair, overlap]
-        except:
-            bestOverlap = [spherePair, overlap]
+    bestOverlap = get_best_overlap(spheres)
     
     v_u = vector(bestOverlap[0][0], bestOverlap[0][1])
     distance = vector_magnitude(v_u)
@@ -232,7 +230,7 @@ def sphere_intersection(spheres):#needs doc
         print("direction vector: ", roundedVector)
     return [[centerPoint, bestOverlap[1], intersectionRadius, v_u], scatterSamples]
     
-def valid_points(spheres, scatterSamples):#needs doc
+def valid_points(spheres, scatterSamples):
     """Checks a list of 3D points against a list of spheres.
     Points are considered valid when contained within all spheres in sphere list and not contained within the inner radius of any spheres within the list.
 
@@ -254,22 +252,43 @@ def valid_points(spheres, scatterSamples):#needs doc
             validPoints.append(point)
     return validPoints
 
-def update_list(spheres, newSphere, removedSpheres):#needs doc
+def update_list(spheres, voidSpheres, removedSpheres, newSphere, ):
+    """sorts newly created sphere into appropriate list
+    spheres which have outer radius less than or equal to inner radius are considered void spheres"""
     updatedList = []
     addNewSphere = True
-    for sphere in spheres:
-        if vector_magnitude(vector(sphere, newSphere)) + newSphere[3] <= sphere[3]:
-            if sphere[3] <= newSphere[3]:
-                updatedList.append(sphere)
-                addNewSphere = False
-        else:
-            updatedList.append(sphere)
-    if addNewSphere == True:
-        updatedList.append(newSphere)
+    if newSphere[3] <= newSphere[4]:
+        voidSpheres.append(newSphere)
     else:
-        removedSpheres.append(newSphere)
+        for sphere in spheres:
+            if vector_magnitude(vector(sphere, newSphere)) + newSphere[3] <= sphere[3]:
+                if sphere[3] <= newSphere[3]:
+                    updatedList.append(sphere)
+                    addNewSphere = False
+            else:
+                updatedList.append(sphere)
+        if addNewSphere == True:
+            updatedList.append(newSphere)
+        else:
+            removedSpheres.append(newSphere)
+    return [updatedList, voidSpheres, removedSpheres]
 
-    return [updatedList, removedSpheres]
+def get_best_overlap(spheres):
+    """calculates and returns the pair of spheres from a sphere list which have the largest overlapping distance
+    spheres = [[x, y, z, r1, r2], [x, y, z, r1, r2],  ... ]
+    returns [[sphereOne, sphereTwo], overlap]
+    where sphereOne, sphereTwo are spheres = [x, y, z, r1, r2]
+    and overlap is the overlapping distance"""
+    bestOverlap = []
+    spherePairs = [(s1, s2) for s1 in spheres for s2 in spheres if s1 != s2]
+    for spherePair in spherePairs:
+        overlap = spherePair[0][3] + spherePair[1][3] - vector_magnitude(vector(spherePair[0], spherePair[1]))
+        try:
+            if bestOverlap[1] > overlap:
+                bestOverlap = [spherePair, overlap]
+        except:
+            bestOverlap = [spherePair, overlap]
+    return bestOverlap
 
 def get_numbers(inputString):
     inputNumbers = []
