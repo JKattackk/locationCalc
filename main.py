@@ -109,6 +109,7 @@ def sphere_scatter(sphere, samples):
     """generates and returns a uniform spherical scatter in the described sphere
     sphere = [x, y, z, outer_radius, inner_radius]
     returns list of points [[x, y, z], [x, y, z],  ... ]"""
+    ### doesnt seem to be distributing points uniformly across radius ###
     r1 = sphere[3]
     r2 = sphere[4]
     center = sphere[0:3]
@@ -215,6 +216,7 @@ def sphere_intersection(spheres, voidSpheres):#needs doc
     #consider reworking this to only check new pairs against old best when sphere added
     bestSphere = []
     bestOverlap = []
+    ### this should be tidied up ###
     if len(sphereList) > 1:
         bestOverlap = get_best_overlap(spheres)
         #determine sphere with smallest volume
@@ -227,10 +229,13 @@ def sphere_intersection(spheres, voidSpheres):#needs doc
                 bestSphere = [sphere, vol]
         #if best sphere has less volume than best intersection use that for point generation
         #should help to handle the case of very thin spheres more effectively
-        if bestSphere[1] < cyl_volume(bestOverlap[1], bestOverlap[2]):
-            scatterSamples = sphere_scatter(bestSphere[0], samples)
+        if len(bestOverlap) != 0:
+            if bestSphere[1] < cyl_volume(bestOverlap[1], bestOverlap[2]):
+                scatterSamples = sphere_scatter(bestSphere[0], samples)
+            else:
+                scatterSamples = cyl_scatter(bestOverlap[1], bestOverlap[2], bestOverlap[3], bestOverlap[4], samples)
         else:
-            scatterSamples = cyl_scatter(bestOverlap[1], bestOverlap[2], bestOverlap[3], bestOverlap[4], samples)
+            scatterSamples = sphere_scatter(bestSphere[0], samples)
     else:
         bestSphere = [spheres[0], sphere_volume(spheres[0])]
         scatterSamples = sphere_scatter(bestSphere[0], samples)
@@ -298,34 +303,34 @@ def get_best_overlap(spheres):
     and overlap is the overlapping distance"""
     #could implement cylinder area calculation to more accurately find the smallest overlap
     bestOverlap = []
-    spherePairs = [(s1, s2) for s1 in spheres for s2 in spheres if s1 != s2]
+    spherePairs = [(s1, s2) for s1 in spheres for s2 in spheres if s1 != s2 and vector_magnitude(vector(s1, s2)) != 0]
     for spherePair in spherePairs:
-        overlap = spherePair[0][3] + spherePair[1][3] - vector_magnitude(vector(spherePair[0], spherePair[1]))
+        overlap = spherePair[0][3] + spherePair[1][3] - vector_magnitude(vector(spherePair[0], spherePair[1]))        
         try:
             if bestOverlap[1] > overlap:
                 bestOverlap = [spherePair, overlap]
         except:
             bestOverlap = [spherePair, overlap]
-    v_u = vector(bestOverlap[0][0], bestOverlap[0][1])
-    distance = vector_magnitude(v_u)
-    v_u = [x / distance for x in v_u]
-    distCenter = (distance**2 + bestOverlap[0][0][3]**2 - (bestOverlap[0][1][3]**2)) / (2*distance)
-    vCenter = [x * distCenter for x in v_u]
-    centerPoint = [bestOverlap[0][0][0] + vCenter[0], bestOverlap[0][0][1] + vCenter[1], bestOverlap[0][0][2] + vCenter[2]]
-    try:
-        intersectionRadius = math.sqrt(bestOverlap[0][0][3]**2 - distCenter**2)
-    except:
-        #temp while I troubleshoot a crash
-        print("Issue calculating intersection radius")
-        print("distCenter: ", distCenter)
-        print("bestOverlap[0][0][3]: ", bestOverlap[0][0][3])
+    if len(bestOverlap) != 0:
+        v_u = vector(bestOverlap[0][0], bestOverlap[0][1])
+        distance = vector_magnitude(v_u)
+        v_u = [x / distance for x in v_u]
+        distCenter = (distance**2 + bestOverlap[0][0][3]**2 - (bestOverlap[0][1][3]**2)) / (2*distance)
+        vCenter = [x * distCenter for x in v_u]
+        centerPoint = [bestOverlap[0][0][0] + vCenter[0], bestOverlap[0][0][1] + vCenter[1], bestOverlap[0][0][2] + vCenter[2]]
         try:
-            print("bestOverlap[0][0][3]**2 - distCenter**2: ", bestOverlap[0][0][3]**2 - distCenter**2)
+            intersectionRadius = math.sqrt(bestOverlap[0][0][3]**2 - distCenter**2)
         except:
-            print("failed to calculate bestOverlap[0][0][3]**2 - distCenter**2")
-        sys.exit
-        
-    bestOverlap.extend([intersectionRadius, v_u, centerPoint])
+            #temp while I troubleshoot a crash
+            print("Issue calculating intersection radius")
+            print("distCenter: ", distCenter)
+            print("bestOverlap[0][0][3]: ", bestOverlap[0][0][3])
+            try:
+                print("bestOverlap[0][0][3]**2 - distCenter**2: ", bestOverlap[0][0][3]**2 - distCenter**2)
+            except:
+                print("failed to calculate bestOverlap[0][0][3]**2 - distCenter**2")
+            sys.exit
+            bestOverlap.extend([intersectionRadius, v_u, centerPoint])
     return bestOverlap
 
 def get_numbers(inputString):
