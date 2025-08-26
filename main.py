@@ -348,7 +348,7 @@ def make_sphere(inputNumbers):
         if len(pastedNumbers) < 3:
             print("no valid coordinates in clipboard")
         else:
-            newSphere = pastedNumbers[0:2]
+            newSphere = pastedNumbers[0:3]
             newSphere.extend([rad1, rad2])
     elif len(inputNumbers) == 1:
         #uses input as outer radius, gets coordinates from clipboard
@@ -357,7 +357,7 @@ def make_sphere(inputNumbers):
         if len(pastedNumbers) < 3:
             print("no valid coordinates in clipboard")
         else:
-            newSphere = pastedNumbers[0:2]
+            newSphere = pastedNumbers[0:3]
             newSphere.extend([rad1, rad2])
     elif len(inputNumbers) == 2:
         #uses inputs as inner and outer radius, gets coordinates from clipboard
