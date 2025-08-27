@@ -121,9 +121,9 @@ def sphere_scatter(sphere, samples):
     v /= np.linalg.norm(v, axis = 1)[:, np.newaxis]
 
     #random radius within r1, r2
-    u = np.random.rand(samples)
+    u = np.random.rand(samples) 
     rad = (u * (r1**3 - r2**3) + r2**3) ** (1/3)
-    rad = np.random.uniform(r2/r1, 1, samples) * r1
+
 
     #extend direction vectors by radius distribution, recenter samples
     points = v * rad[:, np.newaxis]
