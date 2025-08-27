@@ -230,6 +230,7 @@ def sphere_intersection(spheres, voidSpheres):#needs doc
         #if best sphere has less volume than best intersection use that for point generation
         #should help to handle the case of very thin spheres more effectively
         if len(bestOverlap) != 0:
+            print(bestOverlap)
             if bestSphere[1] < cyl_volume(bestOverlap[1], bestOverlap[2]):
                 scatterSamples = sphere_scatter(bestSphere[0], samples)
             else:
@@ -330,7 +331,7 @@ def get_best_overlap(spheres):
             except:
                 print("failed to calculate bestOverlap[0][0][3]**2 - distCenter**2")
             sys.exit
-            bestOverlap.extend([intersectionRadius, v_u, centerPoint])
+        bestOverlap.extend([intersectionRadius, v_u, centerPoint])
     return bestOverlap
 
 def get_numbers(inputString):
