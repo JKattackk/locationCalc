@@ -230,7 +230,7 @@ def sphere_intersection(spheres, voidSpheres):#needs doc
         #if best sphere has less volume than best intersection use that for point generation
         #should help to handle the case of very thin spheres more effectively
         if len(bestOverlap) != 0:
-            print(bestOverlap)
+            #print(bestOverlap)
             if bestSphere[1] < cyl_volume(bestOverlap[1], bestOverlap[2]):
                 scatterSamples = sphere_scatter(bestSphere[0], samples)
             else:
@@ -301,17 +301,23 @@ def get_best_overlap(spheres):
     spheres = [[x, y, z, r1, r2], [x, y, z, r1, r2],  ... ]
     returns [[sphereOne, sphereTwo], overlap, intersectionRadius, v_u, center]
     where sphereOne, sphereTwo are spheres = [x, y, z, r1, r2]
-    and overlap is the overlapping distance"""
+    and overlap is the overlapping distance
+    if no valid overlap is found, returns []"""
     #could implement cylinder area calculation to more accurately find the smallest overlap
     bestOverlap = []
     spherePairs = [(s1, s2) for s1 in spheres for s2 in spheres if s1 != s2 and vector_magnitude(vector(s1, s2)) != 0]
     for spherePair in spherePairs:
-        overlap = spherePair[0][3] + spherePair[1][3] - vector_magnitude(vector(spherePair[0], spherePair[1]))        
-        try:
-            if bestOverlap[1] > overlap:
+        overlap = spherePair[0][3] + spherePair[1][3] - vector_magnitude(vector(spherePair[0], spherePair[1]))
+        ##catch for spheres with no overlap (negative overlap distance)
+
+        #could add case for spheres with 0 overlap distance
+        #single potential solution then checked against rest of sphere list.
+        if  overlap > 0:
+            try:
+                if bestOverlap[1] > overlap:
+                    bestOverlap = [spherePair, overlap]
+            except:
                 bestOverlap = [spherePair, overlap]
-        except:
-            bestOverlap = [spherePair, overlap]
     if len(bestOverlap) != 0:
         v_u = vector(bestOverlap[0][0], bestOverlap[0][1])
         distance = vector_magnitude(v_u)
@@ -332,6 +338,8 @@ def get_best_overlap(spheres):
                 print("failed to calculate bestOverlap[0][0][3]**2 - distCenter**2")
             sys.exit
         bestOverlap.extend([intersectionRadius, v_u, centerPoint])
+    else:
+        print("no valid overlap found")
     return bestOverlap
 
 def get_numbers(inputString):
@@ -391,7 +399,7 @@ while True:
     sphereList = []
     voidSpheres = []
     removedSpheres = []
-    scatterSamples = None
+    scatterSamples = []
 
     while True:
         print("waiting for input: ")
@@ -399,7 +407,7 @@ while True:
         if userInput == "r":
             break
         elif userInput == "p":
-            if scatterSamples is not None:
+            if len(scatterSamples) != 0:
                 plot_scatter3d(scatterSamples, maxPlotPoints)
             else:
                 #################
@@ -407,6 +415,8 @@ while True:
                 scatterSamples = valid_points(sphereList, voidSpheres, scatterSamples)
                 if len(scatterSamples) > 0:
                     plot_scatter3d(scatterSamples, maxPlotPoints)
+                else:
+                    print("no valid solution found")
         else:
             inputNumbers = get_numbers(userInput)
             if len(inputNumbers) > 5:
