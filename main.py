@@ -1,20 +1,15 @@
 import math
 import numpy as np
 import pyperclip
-from global_hotkeys import *
 import os
 import plotly.graph_objects as go
+import sys
 
-def_rad = 200
+def_rad = 250
 samples = 200000
-maxPlotPoints = 10000
+maxPlotPoints = 20000
 
-#factor for adjusting random distribution in sphere scattering
-#k>3 will favour outer edge of sphere
-k = 3
-
-#def plot_shader(plotPoints):
-
+### PLOTTING ###
 """ def plot_points(plotPoints):
     fig = plt.figure()
     ax = fig.add_subplot(projection='3d')
@@ -85,80 +80,97 @@ def plot_volume(points, bins=50):
     )
     fig.show()
 
-def sphere_intersection(spheres):
-    scatterSamples = None
-    #calculate vector between center of spheres
-    #consider reworking this to only check new pairs against old best when sphere added
-    bestOverlap = []
-    spherePairs = [(s1, s2) for s1 in spheres for s2 in spheres if s1 != s2]
-    for spherePair in spherePairs:
-        overlap = spherePair[0][3] + spherePair[1][3] - vector_magnitude(vector(spherePair[0], spherePair[1]))
-        try:
-            if bestOverlap[1] > overlap:
-                bestOverlap = [spherePair, overlap]
-        except:
-            bestOverlap = [spherePair, overlap]
+### 3D TOOLS ###
+def vector(pointOne, pointTwo):
+    """Calculates and returns the vector from pointOne to pointTwo"""
+    v = [pointTwo[0] - pointOne[0], pointTwo[1] - pointOne[1], pointTwo[2] - pointOne[2]]
+    return v
+
+def vector_magnitude(v):
+    """Calculates and returns the magnitude of a vector v"""
+    mag = math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
+    return mag
+
+def sphere_volume(sphere):
+    """Calculates and returns the volume of a sphere or hollow sphere
+    sphere = [x, y, z, rad1, rad2]"""
+    [rad1, rad2] = [sphere[3], sphere[4]]
+    vol = (4/3)*math.pi*(rad1**3 - rad2**3)
+    return vol
+
+def cyl_volume(d1, r):
+    """Calculates and returns the volume of a cylinder of height d1, radius r
+    returns volume"""
+    return math.pi*(r**2)*d1
+
+
+### SCATTERING TOOLS ###
+def sphere_scatter(sphere, samples):
+    """generates and returns a uniform spherical scatter in the described sphere
+    sphere = [x, y, z, outer_radius, inner_radius]
+    returns list of points [[x, y, z], [x, y, z],  ... ]"""
+    ### doesnt seem to be distributing points uniformly across radius ###
+    r1 = sphere[3]
+    r2 = sphere[4]
+    center = sphere[0:3]
+    if r2 < 0 or r1 <= r2:
+        raise ValueError("Require 0 <= r_inner < r_outer")
     
-    v_u = vector(bestOverlap[0][0], bestOverlap[0][1])
-    distance = vector_magnitude(v_u)
-    v_u = [x / distance for x in v_u]
-    distCenter = (distance**2 + bestOverlap[0][0][3]**2 - (bestOverlap[0][1][3]**2)) / (2*distance)
-    vCenter = [x * distCenter for x in v_u]
-    centerPoint = [bestOverlap[0][0][0] + vCenter[0], bestOverlap[0][0][1] + vCenter[1], bestOverlap[0][0][2] + vCenter[2]]
+    #unit vectors for direction
+    v = np.random.normal(0, 1, (samples, 3))
+    v /= np.linalg.norm(v, axis = 1)[:, np.newaxis]
 
-    intersectionRadius = math.sqrt(bestOverlap[0][0][3]**2 - distCenter**2)
+    #random radius within r1, r2
+    u = np.random.rand(samples) 
+    rad = (u * (r1**3 - r2**3) + r2**3) ** (1/3)
 
-    if len(spheres) > 2:
-        scatterSamples = cyl_scatter(centerPoint, bestOverlap[1], intersectionRadius, v_u, samples)
-        scatterSamples = valid_points(spheres, scatterSamples)
-        if len(scatterSamples) > 0:
-            scatterCenter = scatter_center(scatterSamples)
-            scatterBounding = find_scatter_bounds(scatterSamples, scatterCenter)
-            print("Center of scatter: ", scatterCenter)
-            print(scatterBounding)
-        else:
-            print("center of intersection: ", [round(i) for i in centerPoint])
-            print("intersection radius: ", round(intersectionRadius))
-            print("intersection overlap: ", round(bestOverlap[1]))
-            roundedVector = [f"{num:.2f}" for num in v_u]
-            print("direction vector: ", roundedVector)
-    else:
-        print("center of intersection: ", [round(i) for i in centerPoint])
-        print("intersection radius: ", round(intersectionRadius))
-        print("intersection overlap: ", round(bestOverlap[1]))
-        roundedVector = [f"{num:.2f}" for num in v_u]
-        print("direction vector: ", roundedVector)
-    return [[centerPoint, bestOverlap[1], intersectionRadius, v_u], scatterSamples]
+
+    #extend direction vectors by radius distribution, recenter samples
+    points = v * rad[:, np.newaxis]
+    points = points + center
+    return points
+
+def cyl_scatter(d1, radius, vector, center, samples):
+    """generates and returns a random cylindrical distribution
+
+    center = [x, y, z]      defines the center point of the cylinder
+    d1 defines the height of the cylinder
+    radius defines the radius of the cylinder
+    vector = [x, y, z]      defines the unit vector along which the height of the cylinder is parallel (each circle of the cylinder would lie on a plane normal to this vector)
     
-def valid_points(spheres, scatterSamples):
-    validPoints = []
-    for point in scatterSamples:
-        valid = True
-        for sphere in spheres:
-            if vector_magnitude(vector(sphere, point)) > sphere[3] or vector_magnitude(vector(sphere, point)) < sphere[4] :
-                valid = False
-        if valid:
-            validPoints.append(point)
-    return validPoints
+    returns a list of points [[x, y, z], [x, y, z],  ... ]"""
+    #d1 is the distance along vector v
+    vector = np.array(vector)
+    #let vector be one coordinate axis and generate random points along this axis between -.5d1 and .5d1
+    v1 = [scale*vector for scale in np.random.uniform(-.5*d1, .5*d1, samples)]
 
-def update_list(spheres, newSphere, removedSpheres):
-    updatedList = []
-    addNewSphere = True
-    for sphere in spheres:
-        if vector_magnitude(vector(sphere, newSphere)) + newSphere[3] <= sphere[3]:
-            if sphere[3] <= newSphere[3]:
-                updatedList.append(sphere)
-                addNewSphere = False
-        else:
-            updatedList.append(sphere)
-    if addNewSphere == True:
-        updatedList.append(newSphere)
+    #determine vector2 orthogonal to vector
+    if np.allclose(vector, [0,0,1]):
+        not_parallel = np.array([1,0,0])
     else:
-        removedSpheres.append(newSphere)
+        not_parallel = np.array([0,0,1])
+    vector2 = np.cross(vector, not_parallel)
+    vector2 = [i / np.linalg.norm(vector2) for i in vector2]
 
-    return [updatedList, removedSpheres]
+    #determine vector3 orthogonal to both vector and vector1
+    #these 3 vectors form the basis of a new coordinate system
+    vector3 = np.cross(vector, vector2)
+
+    theta = np.random.uniform(0, 2 * np.pi, samples)
+    r = radius * np.sqrt(np.random.uniform(0, 1, samples))
+    v2 = (r * np.cos(theta))
+    v2 = [np.multiply(a, vector2) for a in  v2]
+
+    v3 = (r * np.sin(theta))
+    v3 = [np.multiply(b, vector3) for b in  v3]
+
+    circPoints = [v1[i] + v2[i] + v3[i] + center for i in range(len(v1))]
+    return circPoints
 
 def scatter_center(scatterSamples):
+    """determines the average coordinates of a set of 3D points
+    scatterSamples = [[x, y, z], [x, y, z],  ... ]
+    returns [xavg, yavg, zavg] as integers"""
     xavg = 0
     yavg = 0
     zavg = 0
@@ -172,23 +184,9 @@ def scatter_center(scatterSamples):
     zavg = zavg/len(scatterSamples)
     return [int(xavg), int(yavg), int(zavg)]
 
-def vector_magnitude(v):
-    mag = math.sqrt(v[0]**2 + v[1]**2 + v[2]**2)
-    return mag
-
-def vector(sphereOne, sphereTwo):
-    v = [sphereTwo[0] - sphereOne[0], sphereTwo[1] - sphereOne[1], sphereTwo[2] - sphereOne[2]]
-    return v
-
-def sphere_scatter(center, radius, samples):
-    v = np.random.normal(0, 1, (samples, 3))
-    v /= np.linalg.norm(v, axis = 1)[:, np.newaxis]
-    rad = np.random.rand(samples) ** (1/k) * radius
-    points = v * rad[:, np.newaxis]
-    points = points + center
-    return points
-
 def find_scatter_bounds(scatterPoints, center):
+    """Finds the max and min (x, y, z) for the scatter
+    returns {"x": [xmin, xmax], "y": [ymin, ymax], "z": [zmin, zmax]}"""
     scatterPoints = (np.array(scatterPoints) - np.array(center))
     xbounds = np.array([0, 0])
     ybounds = np.array([0, 0])
@@ -211,36 +209,138 @@ def find_scatter_bounds(scatterPoints, center):
     #return {"x":xbounds.astype(int).tolist(), "y": ybounds.astype(int).tolist(), "z": zbounds.astype(int).tolist()}
     return {"x": (xbounds + center[0]).astype(int).tolist(), "y": (ybounds + center[1]).astype(int).tolist(), "z": (zbounds + center[2]).astype(int).tolist()}
 
-def cyl_scatter(center, d1, radius, vector, samples):
-    
-    #d1 is the distance along vector v
-    vector = np.array(vector)
-    #let v be one coordinate axis and generate random points along this axis between -.5d1 and .5d1
-    v1 = [scale*vector for scale in np.random.uniform(-.5*d1, .5*d1, samples)]
-
-    #determine vector2 orthogonal to vector
-    if np.allclose(vector, [0,0,1]):
-        not_parallel = np.array([1,0,0])
+### OTHER ###
+def sphere_intersection(spheres, voidSpheres):#needs doc
+    scatterSamples = None
+    #calculate vector between center of spheres
+    #consider reworking this to only check new pairs against old best when sphere added
+    bestSphere = []
+    bestOverlap = []
+    ### this should be tidied up ###
+    if len(sphereList) > 1:
+        bestOverlap = get_best_overlap(spheres)
+        #determine sphere with smallest volume
+        for sphere in spheres:
+            vol = sphere_volume(sphere)
+            try:
+                if bestSphere[1] > vol:
+                    bestSphere = [sphere, vol]
+            except:
+                bestSphere = [sphere, vol]
+        #if best sphere has less volume than best intersection use that for point generation
+        #should help to handle the case of very thin spheres more effectively
+        if len(bestOverlap) != 0:
+            #print(bestOverlap)
+            if bestSphere[1] < cyl_volume(bestOverlap[1], bestOverlap[2]):
+                scatterSamples = sphere_scatter(bestSphere[0], samples)
+            else:
+                scatterSamples = cyl_scatter(bestOverlap[1], bestOverlap[2], bestOverlap[3], bestOverlap[4], samples)
+        else:
+            scatterSamples = sphere_scatter(bestSphere[0], samples)
     else:
-        not_parallel = np.array([0,0,1])
-    vector2 = np.cross(vector, not_parallel)
-    vector2 = [i / np.linalg.norm(vector2) for i in vector2]
+        bestSphere = [spheres[0], sphere_volume(spheres[0])]
+        scatterSamples = sphere_scatter(bestSphere[0], samples)
+    scatterSamples = valid_points(spheres, voidSpheres, scatterSamples)
+    if len(scatterSamples) > 0:
+            scatterCenter = scatter_center(scatterSamples)
+            scatterBounding = find_scatter_bounds(scatterSamples, scatterCenter)
+            print("Center of scatter: ", scatterCenter)
+            print(scatterBounding)
 
-    #determine vector3 orthogonal to both vector and vector1
-    #these 3 vectors form the basis of a new coordinate system
+    return [bestOverlap, bestSphere, scatterSamples]
+    
+def valid_points(spheres, voidSpheres, scatterSamples):
+    """Checks a list of 3D points against a list of spheres.
+    Points are considered valid when contained within all spheres in sphere list and not contained within the inner radius of any spheres within the list.
 
-    vector3 = np.cross(vector, vector2)
+    scatterSamples = [[x, y, z], [x, y, z],  ... ]
+    spheres = [[x, y, z, r1, r2], [x, y, z, r1, r2],  ... ]
+    where r1 is outer radius of the sphere and r2 is the inner radius of the sphere
 
-    theta = np.random.uniform(0, 2 * np.pi, samples)
-    r = radius * np.sqrt(np.random.uniform(0, 1, samples))
-    v2 = (r * np.cos(theta))
-    v2 = [np.multiply(a, vector2) for a in  v2]
+    setting r2 to zero creates a non-hollow sphere
+    r2>r1 creates a 'void sphere' where contained points are invalid
+    
+    returns validPoints = [[x, y, z], [x, y, z],  ... ]"""
+    validPoints = []
+    for point in scatterSamples:
+        valid = True
+        for sphere in spheres:
+            if vector_magnitude(vector(sphere, point)) > sphere[3] or vector_magnitude(vector(sphere, point)) < sphere[4] :
+                valid = False
+        for voidSphere in voidSpheres:
+            if vector_magnitude(vector(voidSphere, point)) < voidSphere[4]:
+                valid = False
+        if valid:
+            validPoints.append(point)
+    return validPoints
 
-    v3 = (r * np.sin(theta))
-    v3 = [np.multiply(b, vector3) for b in  v3]
+def update_list(spheres, voidSpheres, removedSpheres, newSphere, ):
+    """sorts newly created sphere into appropriate list
+    spheres which have outer radius less than or equal to inner radius are considered void spheres"""
+    updatedList = []
+    addNewSphere = True
+    if newSphere[3] <= newSphere[4]:
+        voidSpheres.append(newSphere)
+    else:
+        spheres.append(newSphere)
+        """ for sphere in spheres:
+            if vector_magnitude(vector(sphere, newSphere)) + newSphere[3] <= sphere[3]:
+                if sphere[3] <= newSphere[3]:
+                    updatedList.append(sphere)
+                    addNewSphere = False
+            else:
+                updatedList.append(sphere)
+        if addNewSphere == True:
+            updatedList.append(newSphere)
+        else:
+            removedSpheres.append(newSphere) """
+    return [spheres, voidSpheres, removedSpheres]
 
-    circPoints = [v1[i] + v2[i] + v3[i] + center for i in range(len(v1))]
-    return circPoints
+def get_best_overlap(spheres):
+    """calculates and returns the pair of spheres from a sphere list which have the largest overlapping distance
+    spheres = [[x, y, z, r1, r2], [x, y, z, r1, r2],  ... ]
+    returns [[sphereOne, sphereTwo], overlap, intersectionRadius, v_u, center]
+    where sphereOne, sphereTwo are spheres = [x, y, z, r1, r2]
+    and overlap is the overlapping distance
+    if no valid overlap is found, returns []"""
+    #could implement cylinder area calculation to more accurately find the smallest overlap
+    bestOverlap = []
+    spherePairs = [(s1, s2) for s1 in spheres for s2 in spheres if s1 != s2 and vector_magnitude(vector(s1, s2)) != 0]
+    for spherePair in spherePairs:
+        overlap = spherePair[0][3] + spherePair[1][3] - vector_magnitude(vector(spherePair[0], spherePair[1]))
+        ##catch for spheres with no overlap (negative overlap distance)
+
+        #could add case for spheres with 0 overlap distance
+        #single potential solution then checked against rest of sphere list.
+        if  overlap > 0:
+            try:
+                if bestOverlap[1] > overlap:
+                    bestOverlap = [spherePair, overlap]
+            except:
+                bestOverlap = [spherePair, overlap]
+    if len(bestOverlap) != 0:
+        v_u = vector(bestOverlap[0][0], bestOverlap[0][1])
+        distance = vector_magnitude(v_u)
+        v_u = [x / distance for x in v_u]
+        distCenter = (distance**2 + bestOverlap[0][0][3]**2 - (bestOverlap[0][1][3]**2)) / (2*distance)
+        vCenter = [x * distCenter for x in v_u]
+        centerPoint = [bestOverlap[0][0][0] + vCenter[0], bestOverlap[0][0][1] + vCenter[1], bestOverlap[0][0][2] + vCenter[2]]
+        try:
+            intersectionRadius = math.sqrt(bestOverlap[0][0][3]**2 - distCenter**2)
+        except:
+            #temp while I troubleshoot a crash
+            print("Issue calculating intersection radius")
+            print("distCenter: ", distCenter)
+            print("bestOverlap[0][0][3]: ", bestOverlap[0][0][3])
+            try:
+                print("bestOverlap[0][0][3]**2 - distCenter**2: ", bestOverlap[0][0][3]**2 - distCenter**2)
+            except:
+                print("failed to calculate bestOverlap[0][0][3]**2 - distCenter**2")
+            sys.exit
+        bestOverlap.extend([intersectionRadius, v_u, centerPoint])
+    else:
+        print("no valid overlap found")
+    return bestOverlap
 
 def get_numbers(inputString):
     inputNumbers = []
@@ -252,11 +352,54 @@ def get_numbers(inputString):
             print(string, " not a valid number, ignoring")
     return inputNumbers
 
+def make_sphere(inputNumbers):
+    ## attempting to make new sphere
+    newSphere = []
+    if len(inputNumbers) == 0:
+        #uses default radius and gets coordinates from clipboard
+        [rad1, rad2] = [def_rad, 0]
+        pastedNumbers = get_numbers(pyperclip.paste())
+        if len(pastedNumbers) < 3:
+            print("no valid coordinates in clipboard")
+        else:
+            newSphere = pastedNumbers[0:3]
+            newSphere.extend([rad1, rad2])
+    elif len(inputNumbers) == 1:
+        #uses input as outer radius, gets coordinates from clipboard
+        [rad1, rad2] = [inputNumbers[0], 0]
+        pastedNumbers = get_numbers(pyperclip.paste())
+        if len(pastedNumbers) < 3:
+            print("no valid coordinates in clipboard")
+        else:
+            newSphere = pastedNumbers[0:3]
+            newSphere.extend([rad1, rad2])
+    elif len(inputNumbers) == 2:
+        #uses inputs as inner and outer radius, gets coordinates from clipboard
+        [rad1, rad2] = [inputNumbers[0], inputNumbers[1]]
+        pastedNumbers = get_numbers(pyperclip.paste())
+        if len(pastedNumbers) < 3:
+            print("no valid coordinates in clipboard")
+        else:
+            newSphere = pastedNumbers[0:3]
+            newSphere.extend([rad1, rad2])
+    elif len(inputNumbers) == 3:
+        #uses inputs as coordinates, uses default radius
+        [rad1, rad2] = [def_rad, 0]
+        newSphere = inputNumbers[0:2]
+        newSphere = newSphere.extend[rad1, rad2]
+    elif len(inputNumbers) > 3:
+        #uses inputs as coordinates and radius. if only four numbers entered assumes inner radius of zero.
+        newSphere = inputNumbers
+        if len(newSphere) < 5:
+            newSphere.append(0)
+    return newSphere
+
 while True:
     os.system('cls')
     sphereList = []
+    voidSpheres = []
     removedSpheres = []
-    scatterSamples = None
+    scatterSamples = []
 
     while True:
         print("waiting for input: ")
@@ -264,83 +407,46 @@ while True:
         if userInput == "r":
             break
         elif userInput == "p":
-            if scatterSamples is not None:
+            if len(scatterSamples) != 0:
                 plot_scatter3d(scatterSamples, maxPlotPoints)
             else:
-                if len(sphereList) > 1:
-                    scatterSamples = cyl_scatter(result[0], result[1], result[2], result[3], samples)
-                elif len(sphereList) == 1:
-                    scatterSamples = sphere_scatter(sphereList[0][0:3], sphereList[0][3], samples)
-                scatterSamples = valid_points(sphereList, scatterSamples)
+                #################
+                scatterSamples = sphere_scatter(sphereList[0], samples)
+                scatterSamples = valid_points(sphereList, voidSpheres, scatterSamples)
                 if len(scatterSamples) > 0:
                     plot_scatter3d(scatterSamples, maxPlotPoints)
-        elif userInput == "u":
-            try:
-                removedSpheres.append(sphereList.pop())
-            except:
-                print("no sphere to remove")
-                ############################
+                else:
+                    print("no valid solution found")
         else:
             inputNumbers = get_numbers(userInput)
             if len(inputNumbers) > 5:
                 print("invalid input")
             else:
-                ## attempting to make new sphere
-                newSphere = []
-                if len(inputNumbers) == 0:
-                    #uses default radius and gets coordinates from clipboard
-                    [rad1, rad2] = [def_rad, 0]
-                    pastedNumbers = get_numbers(pyperclip.paste())
-                    if len(pastedNumbers) < 3:
-                        print("no valid coordinates in clipboard")
-                    else:
-                        newSphere = pastedNumbers[0:2]
-                        newSphere.extend([rad1, rad2])
-                elif len(inputNumbers) == 1:
-                    #uses input as outer radius, gets coordinates from clipboard
-                    [rad1, rad2] = [inputNumbers[0], 0]
-                    pastedNumbers = get_numbers(pyperclip.paste())
-                    if len(pastedNumbers) < 3:
-                        print("no valid coordinates in clipboard")
-                    else:
-                        newSphere = pastedNumbers[0:2]
-                        newSphere.extend([rad1, rad2])
-                elif len(inputNumbers) == 2:
-                    #uses inputs as inner and outer radius, gets coordinates from clipboard
-                    [rad1, rad2] = [inputNumbers[0], inputNumbers[1]]
-                    pastedNumbers = get_numbers(pyperclip.paste())
-                    if len(pastedNumbers) < 3:
-                        print("no valid coordinates in clipboard")
-                    else:
-                        newSphere = pastedNumbers[0:2]
-                        newSphere.extend([rad1, rad2])
-                elif len(inputNumbers) == 3:
-                    #uses inputs as coordinates, uses default radius
-                    [rad1, rad2] = [def_rad, 0]
-                    newSphere = inputNumbers[0:2]
-                    newSphere = newSphere.extend[rad1, rad2]
-                elif len(inputNumbers) > 3:
-                    #uses inputs as coordinates and radius. if only four numbers entered assumes inner radius of zero.
-                    newSphere = inputNumbers
-                    if len(newSphere) < 5:
-                        newSphere.append(0)
-                
+                newSphere = make_sphere(inputNumbers)
                 if newSphere != None:
                     os.system('cls')
-                    [sphereList, removedSpheres] = update_list(sphereList, newSphere, removedSpheres)
-                    
+                    [sphereList, voidSpheres, removedSpheres] = update_list(sphereList, voidSpheres, removedSpheres, newSphere)
+                    ##displaying current stored data
                     if len(removedSpheres) >= 1:
-                        print("inactive spheres")
+                        print("inactive spheres:")
                         for sphere in removedSpheres:
                             print(sphere)
                         print("\n")
-
-                    print("active spheres:")
-                    for sphere in sphereList:
-                        print(sphere)
+                    if len(sphereList) > 0:
+                        print("active spheres:")
+                        for sphere in sphereList:
+                            print(sphere)
+                    if len(voidSpheres) > 0:
+                        print("void spheres:")  
+                        for sphere in voidSpheres:
+                            print(sphere)
                     print("\n")
-                    if len(sphereList) >=2:
-                        [result, scatterSamples] = sphere_intersection(sphereList)
+
+                    ##
+                    if len(sphereList) > 0 and len(sphereList) + len(voidSpheres) > 1:
+                        [cyl, sphere, scatterSamples] = sphere_intersection(sphereList, voidSpheres)
+                else:
+                    print("failed to make sphere from input.")
 
 
             

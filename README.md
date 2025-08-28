@@ -84,4 +84,31 @@ Possible future features:
     - can cause multiple disconnected search areas (?)
         - some way to recognize seperate areas and tell the user multiple centers / ranges instead of giving one in the center of multiple areas
         - maybe changing plot method?
-    
+
+___________________________________________________________________________________________________________________________________________________________________________________
+
+INNER RADIUS
+
+New types of spheres
+ - hollow sphere with inner radius r1 and outer radius r2
+    - r2 < r1
+ - spherical "void" zone
+    - r2 >= r1
+
+hollow sphere with hollow sphere or standard sphere should just work(?) with the standard method of calculating area given the user doesnt enter an extremely thin sphere.
+extremely thin spheres may require a new approach
+
+void spheres need to be recognized and treated differently.
+if two normal spheres (standard or hollow) exist the scatter can just be generated from those and void spheres can be removed from the area during point testing
+if a single normal or hollow sphere exists we will generate the points using sphere_scatter (add support for inner/outer radius for use with hollow spheres?) and void spheres can be removed from that.
+
+When should a sphere be considered redundant?
+case 1: sphere contained within another sphere
+sphere with smaller radius should be saved, larger sphere can be discarded.
+case 2: void sphere contained within void sphere
+sphere with smaller radius should be discarded.
+
+hollow sphere intersections not yet decided
+
+New issues:
+ - a sphere and a "sherical void" do not overlap, making the standard method of generating scatter not work
