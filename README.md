@@ -1,19 +1,43 @@
 # locationCalc
- Calculating location of object using overlap of detection spheres
+ Calculating potential locations of an object based on overlap of spheres.
+
+___________________________________________________________________________________________________________________________________________________________________________________
+
+Using the tool:
+
+ - entering 'r' resets the search
+ - entering 'p' attempts to plot the potential points
+
+ 
+Entering anything else attempts to create a sphere from inputs.
+
+**one number entered:**
+Number is outer radius of sphere.  
+Attempts to grab sphere coordinates from clipboard.
+
+**two numbers entered:**
+First number is out radius.  Second number is inner radius. 
+Attempts to grab sphere coordinates from clipboard.
+
+**three numbers entered:**
+Entered numbers are center coordinate.  Uses default outer radius and inner radius of zero.
+
+**four numbers entered:**
+First three numbers are center coordinate.  Fourth number is outer radius.  Inner radius is zero
+
+**five numbers entered:**
+First three numbers are center coordinate.  Fourth number is outer radius.  Fifth number is inner radius.
+
+Inner radius can be used to creat hollow spheres (object within outer radius but not within inner radius) or to create 'void spheres'  for inner radius >= outer radius (object not within inner radius).
+I reccommend creating at least one thin hollow sphere (using the edge of a detection range) or one small overlap (two spheres which barely overlap) to limit the volume in which points are scattered.
+
+
+brainstorm / notes stuff (not neccessarily kept up to date) vvv
+___________________________________________________________________________________________________________________________________________________________________________________
 
 Problem:
 A tool makes a noise to alert you when you are within x units of an object.
 Using two or more points along the outer radius of this detection range calculate the most likely position(s) of the object in 3D space.
-
-Usage:
-Currently somewhat integrated with Minecraft.  
-Use F3+C to copy coordinates to clipboard.
-press enter in console to add a sphere with the default radius
-enter a radius to add a sphere with a custom radius
-
-enter 'u' to remove the last active sphere
-enter 'p' to show a plot of the area
-enter 'r' to reset the search
 
 ___________________________________________________________________________________________________________________________________________________________________________________
 
