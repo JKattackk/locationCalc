@@ -31,7 +31,7 @@ First three numbers are center coordinate.  Fourth number is outer radius.  Fift
 Inner radius can be used to creat hollow spheres (object within outer radius but not within inner radius) or to create 'void spheres'  for inner radius >= outer radius (object not within inner radius).  I reccommend creating at least one thin hollow sphere (using the edge of a detection range) or one small overlap (two spheres which barely overlap) to limit the volume in which points are scattered.
 
 
-brainstorm / notes stuff (not neccessarily kept up to date) vvv
+**brainstorm / notes stuff (not neccessarily kept up to date) vvv**
 ___________________________________________________________________________________________________________________________________________________________________________________
 
 Problem:
