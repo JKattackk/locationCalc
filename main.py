@@ -48,37 +48,6 @@ def plot_scatter3d(points, max_points=200_000):
     fig.update_scenes(aspectmode="data")
     fig.show()
 
-def plot_volume(points, bins=50):
-    points = np.array(points)
-    H, edges = np.histogramdd(points, bins=bins)
-    
-    # Build voxel grid
-    x_centers = (edges[0][:-1] + edges[0][1:]) / 2
-    y_centers = (edges[1][:-1] + edges[1][1:]) / 2
-    z_centers = (edges[2][:-1] + edges[2][1:]) / 2
-    
-    X, Y, Z = np.meshgrid(x_centers, y_centers, z_centers, indexing="ij")
-    
-    fig = go.Figure(data=go.Volume(
-        x=X.flatten(),
-        y=Y.flatten(),
-        z=Z.flatten(),
-        value=H.flatten(),
-        isomin=1,          # min cutoff (ignore empty voxels)
-        isomax=H.max(),    # max density
-        opacity=0.1,       # transparency
-        surface_count=15   # number of isosurfaces
-    ))
-    
-    fig.update_layout(
-        scene=dict(
-            xaxis_title='X',
-            yaxis_title='Y',
-            zaxis_title='Z'
-        ),
-        title=f"3D Volume Rendering (bins={bins})"
-    )
-    fig.show()
 
 ### 3D TOOLS ###
 def vector(pointOne, pointTwo):
@@ -109,7 +78,6 @@ def sphere_scatter(sphere, samples):
     """generates and returns a uniform spherical scatter in the described sphere
     sphere = [x, y, z, outer_radius, inner_radius]
     returns list of points [[x, y, z], [x, y, z],  ... ]"""
-    ### doesnt seem to be distributing points uniformly across radius ###
     r1 = sphere[3]
     r2 = sphere[4]
     center = sphere[0:3]
