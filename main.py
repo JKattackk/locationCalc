@@ -242,7 +242,7 @@ def valid_points(spheres, voidSpheres, scatterSamples):
             validPoints.append(point)
     return validPoints
 
-def update_list(spheres, voidSpheres, removedSpheres, newSphere, ):
+def update_list(spheres, voidSpheres, removedSpheres, newSphere):
     """sorts newly created sphere into appropriate list
     spheres which have outer radius less than or equal to inner radius are considered void spheres"""
     updatedList = []
@@ -295,6 +295,7 @@ def get_best_overlap(spheres):
         centerPoint = [bestOverlap[0][0][0] + vCenter[0], bestOverlap[0][0][1] + vCenter[1], bestOverlap[0][0][2] + vCenter[2]]
         try:
             intersectionRadius = math.sqrt(bestOverlap[0][0][3]**2 - distCenter**2)
+            bestOverlap.extend([intersectionRadius, v_u, centerPoint])
         except:
             #temp while I troubleshoot a crash
             print("Issue calculating intersection radius")
@@ -305,7 +306,6 @@ def get_best_overlap(spheres):
             except:
                 print("failed to calculate bestOverlap[0][0][3]**2 - distCenter**2")
             sys.exit
-        bestOverlap.extend([intersectionRadius, v_u, centerPoint])
     else:
         print("no valid overlap found")
     return bestOverlap
@@ -353,8 +353,8 @@ def make_sphere(inputNumbers):
     elif len(inputNumbers) == 3:
         #uses inputs as coordinates, uses default radius
         [rad1, rad2] = [def_rad, 0]
-        newSphere = inputNumbers[0:2]
-        newSphere = newSphere.extend[rad1, rad2]
+        inputNumbers.extend([rad1, rad2])
+        newSphere = inputNumbers
     elif len(inputNumbers) > 3:
         #uses inputs as coordinates and radius. if only four numbers entered assumes inner radius of zero.
         newSphere = inputNumbers
